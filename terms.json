@@ -1,0 +1,41 @@
+{
+    "sustainability": [
+        "environment",
+        "ecology",
+        "urban_redevelopment",
+        "redevelopment",
+        "regeneration",
+        "initiatives",
+        "social_economic",
+        "lopment",
+        "nature",
+        "biophilic",
+        "energy",
+        "renewable",
+        "efficiency",
+        "effectiveness",
+        "future",
+        "impact",
+        "daylight",
+        "burnout",
+        "inclusive",
+        "planning",
+        "innovation"
+    ],
+    "patient_privacy": [
+        "welcome",
+        "insufficient",
+        "records",
+        "rooms",
+        "room",
+        "hallway",
+        "stressed"
+    ],
+    "technology": [
+        "integration",
+        "foreign_investment",
+        "resources",
+        "machinery",
+        "electric"
+    ]
+}
