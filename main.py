@@ -16,6 +16,7 @@ from wordcloud import WordCloud, ImageColorGenerator
 from gensim.models import Word2Vec, Phrases
 from gensim.models.phrases import Phraser
 import nltk
+from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 import warnings
 
@@ -23,7 +24,7 @@ import warnings
 import multiprocessing
 import sklearn.manifold
 
-st.set_page_config(page_title="Design shifts in healthcare", page_icon="favicon.ico", layout="centered", initial_sidebar_state="collapsed", menu_items=None)
+st.set_page_config(page_title="Design shifts in healthcare", page_icon="favicon.ico", layout="wide", initial_sidebar_state="collapsed", menu_items=None)
 
 st.write("## Trends in healthcare architectural design")
 
@@ -146,6 +147,57 @@ def load_distances(file_path = 'distances.csv'):
     distances = pd.read_csv(file_path)
     return distances
 
+stemmer = PorterStemmer()
+
+def get_stem(query):
+    return stemmer.stem(query.lower())
+
+def process_query(query):
+    tokens = word_tokenize(query)
+    if len(tokens) == 1:
+        return stemmer.stem(query.lower()), True
+    else:
+        return query.lower(), False
+
+
+def search_query(data, query, is_single_word, words_before=50, words_after=50):
+    results = []
+    for index, row in data.iterrows():
+        content = row['Content']
+        tokens = word_tokenize(content)
+        paper_results = []
+
+        if is_single_word:
+            for i, token in enumerate(tokens):
+                if stemmer.stem(token.lower()) == query:
+                    start = max(0, i - words_before)
+                    end = min(len(tokens), i + words_after + 1)
+                    before = ' '.join(tokens[start:i])
+                    after = ' '.join(tokens[i+1:end])
+                    match = tokens[i]
+                    paper_results.append((before, match, after))
+        else:
+            content_lower = content.lower()
+            query_len = len(query)
+            start = 0
+            while start < len(content_lower):
+                start = content_lower.find(query, start)
+                if start == -1:
+                    break
+                end = start + query_len
+                before_start = max(0, start - (words_before*8))
+                after_end = min(len(content), end + (words_after*8))
+                before = content[before_start:start]
+                after = content[end:after_end]
+                match = content[start:end]
+                paper_results.append((before, match, after))
+                start = end  # Continue searching after the current match
+        
+        if paper_results:
+            results.append((row['Title'], row['Year'], paper_results))
+    return results
+
+
 ### USERFACE
     
 st.sidebar.header("Text preprocessing settings")
@@ -161,7 +213,7 @@ if st.sidebar.button("Re-train the model"):
     model = train_word2vec(data, stop_words_bool, bigrams_bool, trigrams_bool, vector_dim, window_length, min_count_word)
     model.save('models/word2vec.model')
 
-results_tab, clouds_tab, terms_tab, dataset_tab, about_tab  = st.tabs(["Visualize shifts","Word clouds","Terms of interest", "Dataset", "About"])
+results_tab, eval_tab, clouds_tab, terms_tab = st.tabs(["Visualize shifts","Eval", "Word clouds","Terms of interest"])
 
 
 with results_tab:
@@ -179,6 +231,7 @@ with results_tab:
     
     terms = load_terms('terms.json')
     distances_df = pd.DataFrame(columns=['main term', 'year','related term', 'distance'])
+    articles_by_year['Year'] = articles_by_year['Year'].astype(int)
     distances_df.drop(distances_df.index, inplace=True)
     #distances_df= pd.read_csv('distances.csv')
     
@@ -193,23 +246,41 @@ with results_tab:
                     cosine_distance = None  
 
                 distances_df = pd.concat([distances_df, pd.DataFrame({'main term': [main_term], 'year': [year], 'related term': [related_term], 'distance': [cosine_distance]})])
+    distances_df['year'] = distances_df['year'].astype(int)
     distances_df.to_csv('distances.csv', index=False)
 
     main_terms = distances_df['main term'].unique()
 
+    import altair as alt
+
     for main_term in main_terms:
-        plt.figure(figsize=(10, 6))  
-        plt.title(main_term)  
         main_data = distances_df[distances_df['main term'] == main_term]
-        related_terms = main_data['related term'].unique()
-        for related_term in related_terms:
-            related_data = main_data[main_data['related term'] == related_term]
-            plt.plot(related_data['year'], related_data['distance'], label=related_term)
-        plt.xlabel('Year')  
-        plt.ylabel('Cosine Similarity') 
-        plt.legend()  
-        plt.grid(True)  
-        st.pyplot(plt)  
+        chart = alt.Chart(main_data).mark_line().encode(
+            x='year:O',
+            y='distance',
+            color='related term',
+            strokeDash='related term',
+        )
+        st.altair_chart(chart, theme=None, use_container_width=True)
+
+
+with eval_tab:
+    st.title('Contextualized search')
+    query = st.text_input('Enter a word to search:')
+
+    if query:
+        processed_query, is_single_word = process_query(query)
+        results = search_query(papers, processed_query, is_single_word)
+
+        if results:
+            st.write(f'Found {sum(len(paper_results) for _, _, paper_results in results)} results for "{query}"')
+            
+            for title, year, paper_results in results:
+                with st.expander(f'{title} ({year}) - {len(paper_results)} matches'):
+                    for before, match, after in paper_results:
+                        st.write(f'...{before}  :red[**{match}**] {after} ...')
+        else:
+            st.write(f'No results found for "{query}"')
 
 with clouds_tab: 
     articles_by_year = papers.groupby('Year')['Content'].apply(lambda x: ' '.join(x)).reset_index()
@@ -225,7 +296,9 @@ with clouds_tab:
         st.write(f"Year: {year}, Number of tokens: {tokens_count}")
 
         wordcloud = WordCloud(width=1600, 
-                            height=800,                   
+                            height=800,    
+                            background_color='white',
+                            collocations = False,     
                             max_words = 150, 
                             max_font_size=150, 
                             stopwords = stopwords, 
@@ -238,26 +311,25 @@ with clouds_tab:
 
     combined_content = ' '.join(articles_by_year['Content'])
     word_counts_total = Counter(combined_content.split())
-    top_100_words = [word for word, count in word_counts_total.most_common(75)]
-
+    relevant_terms = np.unique(distances_df[['main term','related term']].values)
+    
     def compute_word_count(year_content):
         word_counts_year = Counter(year_content.split())
-        return [word_counts_year[word] for word in top_100_words]
+        return [word_counts_year[word] for word in relevant_terms]
 
     word_counts_by_year = articles_by_year['Content'].apply(compute_word_count).tolist()
-    word_counts_df = pd.DataFrame(word_counts_by_year, columns=top_100_words)
-
+    word_counts_df = pd.DataFrame(word_counts_by_year, columns=relevant_terms)
     plt.figure(figsize=(12, 20))
     num_years = len(articles_by_year)
     bar_height = 0.25
 
     for i, year in enumerate(articles_by_year['Year']):
-        positions = range(len(top_100_words))
+        positions = range(len(relevant_terms))
         plt.barh([pos + i * bar_height for pos in positions], word_counts_df.iloc[i], bar_height, label=year)
 
-    plt.yticks([pos + (len(articles_by_year) - 1) * bar_height / 2 for pos in positions], top_100_words)
+    plt.yticks([pos + (len(articles_by_year) - 1) * bar_height / 2 for pos in positions], relevant_terms)
     plt.xlabel('Count')
-    plt.title('Most frequent words')
+    plt.title('Count of relevant terms')
     plt.legend()
     plt.tight_layout()
 
@@ -352,47 +424,3 @@ with terms_tab:
             save_terms(terms, file_path)
             st.success("Related term deleted successfully.")
 
-
-with dataset_tab:
-    st.write("## About the dataset")
-    count = len(papers)
-    st.write("Description about the source and the method of data collection are coming soon")
-    st.write("The method is based on calculating probabilities of words being in a certain context. In order for it to work reasonably well, we need a large number of manually selected papers (of high quality)")
-    st.write(f"So far, number of papers included: {count}")
-    
-    table_data = {'DOI': papers['DOI'],
-                  'Title': papers['Title'], 
-                  'Year': papers['Year'],}
-    st.table(table_data)
-
-    st.write("## Dataset stastics")
-    papers['Year'] = papers['Year'].astype(int)
-
-    plt.figure()
-    sns.countplot(papers, x="Year")
-    plt.xticks(rotation=45)
-    plt.title("Number of papers per year")
-    st.pyplot(plt)
-
-
-    st.write("## Add new papers")
-    st.write("To add new papers, please upload a CSV file with the following columns: DOI, Title, Year, Content where the column Content contains the extracted text of the paper.")
-    uploaded_file = st.file_uploader("Choose a file")
-    if uploaded_file is not None:
-        new_papers = pd.read_csv(uploaded_file)
-        if set(new_papers.columns) != set(['DOI', 'Title', 'Year', 'Content']):
-            st.write("Please make sure the uploaded file contains the following columns: DOI, Title, Year, Content")
-            st.stop()
-
-        papers = pd.concat([papers, new_papers])
-        papers = papers.drop_duplicates(subset=['DOI'])
-
-        st.write("New papers added")
-        count = len(papers)
-        st.write(f"Total number of papers included: {count}")
-    
-
-with about_tab: 
-    st.write("## About the method")
-    st.write("It is a custom implementation based on computing word2vec embeddings for some specific words of interest such as SUSTAINABILITY or PATIENT PRIVACY. By looking at the neighborhood of these words in the vector space and comparing the distance across different decades, we try to identify shifts in the healthcare architectural design by visualizing the changes in the distance between neighbours and the words of interest.")
-    st.write("## About the project")
