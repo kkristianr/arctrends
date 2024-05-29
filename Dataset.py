@@ -55,7 +55,7 @@ with pdf_reader:
     new_doi = st.text_input("DOI:", key='doi')
     paper_year = st.text_input("Publication year:", key='year')
     new_title = st.text_input("Paper title:", key='title')
-    with st.popover("Adjust the PDF reader settings"):
+    with st.expander("Adjust the PDF reader settings"):
         st.info("The pdf reader is based on the pymupdf library. As default, two-columns layout is assumed. More information [here](https://artifex.com/blog/extract-text-from-a-multi-column-document-using-pymupdf-inpython)")
         footer_margin = st.slider("Footer margin", 0, 100, 40)
         header_margin = st.slider("Header margin", 0, 100, 60)
