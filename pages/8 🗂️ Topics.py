@@ -3,27 +3,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-
 import pyLDAvis
 import pyLDAvis.gensim
-
-import pymupdf
-from multi_column import column_boxes
 
 import streamlit as st
 import streamlit.components.v1 as components
 
 from os import path
-from PIL import Image
-from collections import Counter
-import re
-import json
-from io import StringIO 
-from wordcloud import WordCloud, ImageColorGenerator
+
 import gensim
 from gensim import corpora
-from gensim.models import Word2Vec, Phrases
+from gensim.models import Phrases
 from gensim.models.phrases import Phraser
 import nltk
 from nltk.tokenize import word_tokenize
