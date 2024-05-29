@@ -18,6 +18,7 @@ import multiprocessing
 import sklearn.manifold
 import altair as alt
 
+nltk.download('punkt')
 
 st.set_page_config(page_title="Design shifts in healthcare", page_icon="favicon.ico", layout="centered", initial_sidebar_state="collapsed", menu_items=None)
 
