@@ -64,7 +64,7 @@ def search_query(data, query, is_single_word, words_before=50, words_after=50):
 
 
 
-st.text('## Contextualized search')
+st.write('## Contextualized search')
 query = st.text_input('Enter a word to search:')
 
 if query:
