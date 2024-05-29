@@ -50,7 +50,7 @@ with dataset_tab:
     st.bar_chart(papers_by_decade.set_index('Decade'))
 
 with pdf_reader: 
-    import PyMuPDF
+    import pymupdf
     st.write("## 1. Add a paper through PDF file")
     new_doi = st.text_input("DOI:", key='doi')
     paper_year = st.text_input("Publication year:", key='year')
@@ -68,7 +68,7 @@ with pdf_reader:
     pdf_file = st.file_uploader("Upload PDF file", type="pdf", key='pdf')
     if pdf_file is not None:
         pdf_bytes = pdf_file.getvalue()
-        doc = PyMuPDF.open(stream=pdf_bytes, filetype="pdf")
+        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         text = ""
         for page in doc:
             bboxes = column_boxes(page, footer_margin=footer_margin, header_margin=header_margin, no_image_text=no_image_text)
