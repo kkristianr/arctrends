@@ -1,33 +1,42 @@
 {
-    "sustainable_development": [
+    "sustainability": [
         "nature",
-        "biophilic",
         "energy",
         "renewable",
         "efficiency",
-        "effectiveness",
         "future",
-        "impact",
         "daylight",
-        "burnout",
-        "inclusive",
-        "planning",
         "innovation"
+    ], 
+    "design": [
+        "data_analysis",
+        "evidence",
+        "evidence_driven",
+        "data_collection",
+        "privacy",
+        "needs"
     ],
     "patient": [
-        "welcome",
-        "insufficient",
+        "space_walking",
+        "supervision",
         "records",
-        "rooms",
         "room",
         "hallway",
-        "stressed"
+        "privacy"
+    ],
+    "patient_privacy": [
+        "home-like",
+        "private_bathrooms",
+        "position",
+        "room",
+        "hallway",
+        "space_walking",
+        "supervision"
     ],
     "technology": [
         "integration",
-        "foreign_investment",
         "resources",
-        "machinery",
-        "electric"
+        "decision_support",
+        "desired"
     ]
 }
