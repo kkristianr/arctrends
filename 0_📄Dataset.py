@@ -129,27 +129,3 @@ with about_tab:
     st.write("## About the method")
     st.write("It is a custom implementation based on computing word2vec embeddings for some specific words of interest such as SUSTAINABILITY or PATIENT PRIVACY. By looking at the neighborhood of these words in the vector space and comparing the distance across different decades, we try to identify shifts in the healthcare architectural design by visualizing the changes in the distance between neighbours and the words of interest.")
     st.write("## About the project")
-
-""" with clouds_tab: 
-
-    st.write("Word clouds for every decade")
-    st.write("The word clouds show the most frequent words in the papers for each year.")
-
-
-    for decade, dataset in zip(articles_by_decade['Decade'], articles_by_decade['Content']):
-        tokens_count = len(dataset.split())
-        st.write(f"Decade: {decade}, Number of tokens: {tokens_count}")
-
-        wordcloud = WordCloud(width=1600, 
-                            height=800,    
-                            background_color='white',
-                            collocations = False,     
-                            max_words = 150, 
-                            max_font_size=150, 
-                            stopwords = stopwords, 
-                            random_state=42).generate(dataset)
-        plt.figure(figsize=(12, 8))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis("off")
-        plt.title(decade)
-        st.pyplot(plt) """
