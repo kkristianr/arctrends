@@ -72,7 +72,7 @@ def preprocess_papers (content, stop_words = True, bigrams = True, trigrams = Fa
     return sentences
     
 def train_word2vec(data, vector_dim, window_length, min_count): 
-    model = Word2Vec(sentences = data, vector_size=vector_dim, window=window_length, min_count=min_count, workers=multiprocessing.cpu_count())
+    model = Word2Vec(sentences = data, vector_size=vector_dim, sg=1, negative=10, window=window_length, min_count=min_count, workers=multiprocessing.cpu_count())
     print("Word2Vec vocabulary length:", len(model.wv.key_to_index))
     model.train(data, total_examples=len(data), epochs=25)
     return model
