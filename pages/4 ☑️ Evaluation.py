@@ -207,43 +207,44 @@ if query:
                             st.text(f'Matches for {related_term}: {count}')
 
                         st.write(f'...{before}  :red[**{match}**] {after} ...')
+            with col2:
+                if related_term:
+                    st.write('## Distances')
+                    st.write(f'Distance in tokens (=words) between {query} and {related_term}')
+                    distances = compute_distances(query, related_term)
+                    min_distance = get_shortest_distance(query, related_term)
+                    print(min_distance)
+                    if distances is not None:
+                        chart = alt.Chart(min_distance).mark_bar(
+                            opacity=0.3,
+                            binSpacing=0
+                        ).encode(
+                            alt.X('Distance:Q', bin=alt.Bin(maxbins=50)),
+                            alt.Y('count()', stack=None),
+                            alt.Color('Decade:N')
+                        )
+
+
+                        st.altair_chart(chart, theme="streamlit", use_container_width=True)
+                    
+
+                        chart2 = alt.Chart(min_distance).transform_density(
+                            'Distance',
+                            as_=['Distance', 'Density'],
+                            groupby=['Decade']
+                        ).mark_area(
+                        ).encode(
+                            alt.X('Distance:Q', title='Distance'),
+                            alt.Y('Density:Q', title='Density'),
+                            alt.Row('Decade:N')
+                        ).properties(height=50)
+
+
+                        st.altair_chart(chart2, theme="streamlit", use_container_width=False
+                        )       
+
         else:
             st.write(f'No results found for "{query}"')
-
-        with col2:
-            if related_term:
-                st.write('## Distances')
-                st.write(f'Distance in tokens (=words) between {query} and {related_term}')
-                distances = compute_distances(query, related_term)
-                min_distance = get_shortest_distance(query, related_term)
-                print(min_distance)
-                if distances is not None:
-                    chart = alt.Chart(min_distance).mark_bar(
-                        opacity=0.3,
-                        binSpacing=0
-                    ).encode(
-                        alt.X('Distance:Q', bin=alt.Bin(maxbins=50)),
-                        alt.Y('count()', stack=None),
-                        alt.Color('Decade:N')
-                    )
-
-
-                    st.altair_chart(chart, theme="streamlit", use_container_width=True)
-                
-
-                    chart2 = alt.Chart(min_distance).transform_density(
-                        'Distance',
-                        as_=['Distance', 'Density'],
-                        groupby=['Decade']
-                    ).mark_area(
-                    ).encode(
-                        alt.X('Distance:Q', title='Distance'),
-                        alt.Y('Density:Q', title='Density'),
-                        alt.Row('Decade:N')
-                    ).properties(height=50)
-
-
-                    st.altair_chart(chart2, theme="streamlit", use_container_width=False)
 else:
     st.write("👈 Use the sidebar to search for a topic")
 
