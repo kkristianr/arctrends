@@ -82,7 +82,6 @@ def save_model(model, path):
     model.save(path)
     print("Model saved")
 
-@st.cache_resource
 def load_model(path):
     model = Word2Vec.load(path)
     print("Model loaded")
@@ -158,6 +157,8 @@ if st.sidebar.button("Re-train the models"):
         for decade, dataset in zip(articles_by_decade['Decade'], articles_by_decade['Content']):
             dataset = preprocess_papers(dataset, stop_words = stop_words_bool, bigrams = bigrams_bool, trigrams = trigrams_bool)
             model = train_word2vec(dataset, vector_dim, window_length, min_count)
+            print(model)
+
             model.save(f'models/word2vec_{decade}.model')
 
 for decade, dataset in zip(articles_by_decade['Decade'], articles_by_decade['Content']):
