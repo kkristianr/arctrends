@@ -65,6 +65,13 @@ def preprocess_papers (content):
     #remove empty strings
     new_lines = [word for word in new_lines if word]
 
+    bigram = Phrases(new_lines, min_count=5, threshold=0.5)
+    new_lines = bigram[new_lines] 
+    
+
+    trigram = Phrases(bigram[new_lines], min_count=3, threshold=0.5)
+    new_lines = trigram[bigram[new_lines]]   
+
     return new_lines
 
 

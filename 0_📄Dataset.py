@@ -48,7 +48,6 @@ dataset_tab, pdf_reader, about_tab  = st.tabs(["Dataset", "Paper reader", "About
 with dataset_tab:
     st.write("## About the dataset")
     count = len(papers)
-    st.write("Description about the source and the method of data collection are coming soon")
     st.write("The method is based on calculating probabilities of words being in a certain context. In order for it to work reasonably well, we need a large number of manually selected papers (of high quality)")
     st.write(f"So far, number of papers included: {count}")
     

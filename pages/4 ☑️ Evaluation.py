@@ -52,11 +52,11 @@ def preprocess_papers (content):
     #new_lines = [stemmer.stem(word) for word in new_lines]
 
     # bigrams
-    bigram = Phrases(new_lines, min_count=5, threshold=0.1)
+    bigram = Phrases(new_lines, min_count=5, threshold=0.5)
     new_lines = bigram[new_lines] 
     
 
-    trigram = Phrases(bigram[new_lines], min_count=3, threshold=0.1)
+    trigram = Phrases(bigram[new_lines], min_count=3, threshold=0.5)
     new_lines = trigram[bigram[new_lines]]     
 
     return new_lines
