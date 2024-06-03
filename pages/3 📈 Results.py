@@ -189,14 +189,22 @@ with st.spinner('Creating the graphs...'):
         main_data = distances_df[distances_df['main term'] == main_term]
         st.text(f" Shift in similarity with respect to: {main_term}")
         chart = alt.Chart(main_data).mark_line(
-            point = True
+            #point=alt.OverlayMarkDef(filled=False, fill="white")
         ).encode(
             x=alt.X('decade:N', title='', axis=alt.Axis(labelAngle=0)),
             y=alt.Y('distance', title='Cosine similarity'),
             color='related term',
             strokeDash='related term',
+            tooltip=['related term', 'distance']  
         ).interactive()
-        st.altair_chart(chart, theme='streamlit', use_container_width=True)
 
+        point = alt.Chart(main_data).mark_point(size=50, filled=True).encode(
+            x='decade:N',
+            y='distance',
+            color='related term',
+            tooltip=['related term', 'distance']
+        ).interactive()
+
+        st.altair_chart(chart + point, theme='streamlit', use_container_width=True)
 
 
