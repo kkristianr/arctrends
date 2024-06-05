@@ -168,6 +168,8 @@ def search_query(data, query, is_single_word, context_length=50):
         
         if paper_results:
             results.append((row['Title'], row['Year'], paper_results))
+            #sort by year 
+            results.sort(key=lambda x: x[1])
     return results
 
 #sidebar 
@@ -189,6 +191,7 @@ if query:
             related_term = st.text_input('Search for related term in results: (optional)')
 
             for title, year, paper_results in results:
+                paper_count = 0
                 with st.expander(f'{title} ({year}) - {len(paper_results)} matches'):
                     for before, match, after in paper_results:
                         stem_related_term = get_stem(related_term)
@@ -203,10 +206,12 @@ if query:
                                 count += 1
                                 after = ' '.join([f':blue[**{word}**]' if get_stem(word) == stem_related_term else word for word in after.split()])
                                 break
-                        if related_term:
-                            st.text(f'Matches for {related_term}: {count}')
 
                         st.write(f'...{before}  :red[**{match}**] {after} ...')
+                        paper_count += count
+                    if related_term:
+                        st.write(f'Found {paper_count} matches for "{related_term}" in this paper.')
+        
             with col2:
                 if related_term:
                     st.write('## Distances')
@@ -237,7 +242,7 @@ if query:
                             alt.X('Distance:Q', title='Distance'),
                             alt.Y('Density:Q', title='Density'),
                             alt.Row('Decade:N')
-                        ).properties(height=50)
+                        ).properties(height=100)
 
 
                         st.altair_chart(chart2, theme="streamlit", use_container_width=False

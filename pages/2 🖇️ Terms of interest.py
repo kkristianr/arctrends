@@ -38,7 +38,7 @@ def load_model(path):
     return model
 
 st.write("## Terms generator")
-st.write("Enter a term to generate a list of its neighbours.")
+st.write("Enter a term to generate a list of its related terms:")
 term = st.text_input("Enter term:")
 term = format_term(term)
 if term is not None:
