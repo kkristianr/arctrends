@@ -61,8 +61,6 @@ try:
     table_terms= {'Topics': list(terms.keys()),
                     'Related terms': [", ".join(terms[main_term]) for main_term in terms.keys()]}
     st.table(table_terms)
-
-    
 except FileNotFoundError:
     st.error("File not found.")
 

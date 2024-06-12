@@ -9,14 +9,14 @@ from gensim.models import Word2Vec, Phrases
 from gensim.models.phrases import Phraser
 import nltk
 from nltk.tokenize import sent_tokenize
+from nltk import BigramCollocationFinder
+from nltk.collocations import BigramAssocMeasures
 import multiprocessing
 import altair as alt
 
 nltk.download('punkt')
 
 st.set_page_config(page_title="Design shifts in healthcare", page_icon="favicon.ico", layout="centered", initial_sidebar_state="expanded", menu_items=None)
-
-st.write("## Trends in healthcare architectural design")
 
 
 def preprocess_papers (content, stop_words = True, bigrams = True, trigrams = False):
@@ -56,7 +56,7 @@ def preprocess_papers (content, stop_words = True, bigrams = True, trigrams = Fa
     if stop_words:
         sentences = [[word for word in sentence if word.lower() not in stopwords] for sentence in sentences]
 
-    sentences = [[re.sub('[^A-Za-z0-9-]+', '', word) for word in sentence] for sentence in sentences]
+    sentences = [[re.sub('[^A-Za-z-]+', '', word) for word in sentence] for sentence in sentences]
     #remove empty strings
     sentences = [[word for word in sentence if word] for sentence in sentences]
 
@@ -119,6 +119,17 @@ def load_distances(file_path = 'distances.csv'):
     distances = pd.read_csv(file_path)
     return distances
 
+#@st.cache_data 
+def ppmi_scores(corpus, window_size=20):
+    finder = BigramCollocationFinder.from_words(corpus, window_size=window_size)
+    bigram_measures = BigramAssocMeasures()
+    pmi_scores = finder.score_ngrams(bigram_measures.pmi)
+    pmi_dict = {}
+    for pmi_score in pmi_scores:
+        # from PMI to PPMI, more reliable
+        pmi_dict[pmi_score[0]] = max(pmi_score[1],0)
+    
+    return pmi_dict
 
 
 
@@ -132,20 +143,21 @@ articles_by_decade = papers.groupby('Decade')['Content'].apply(lambda x: ' '.joi
 articles_by_decade['Content'] = articles_by_decade['Content'].astype("string")
 
 
-##data = ' '.join(articles_by_decade['Content'])
+#data = ' '.join(articles_by_decade['Content'])
 #data = preprocess_papers(data, stop_words = True, bigrams = True, trigrams = False)
-#model = train_word2vec(data, 300, 30)
+#model = train_word2vec(data, 300, 30, 2)
 #model.save('models/word2vec.model')
 #print("Model saved")
 
 
 terms = load_terms('terms.json')
-distances_df = pd.DataFrame(columns=['main term', 'decade','related term', 'distance'])
+distances_df = pd.DataFrame(columns=['main term', 'decade','related term', 'distance', 'pmi'])
 #distances_df.drop(distances_df.index, inplace=True)
 
 
+
 st.sidebar.header("Text preprocessing settings")
-stop_words_bool = st.sidebar.checkbox("Remove stop words", False)
+stop_words_bool = st.sidebar.checkbox("Remove stop words", True)
 bigrams_bool = st.sidebar.checkbox("Include bigrams", True)
 trigrams_bool = st.sidebar.checkbox("Include trigrams", True)
 st.sidebar.header("Model settings")
@@ -171,41 +183,117 @@ for decade, dataset in zip(articles_by_decade['Decade'], articles_by_decade['Con
             model = train_word2vec(dataset, vector_dim, window_length, min_count)
             model.save(f'models/word2vec_{decade}.model')
 
+    corpus = [word for sentence in dataset for word in sentence]
+    pmi_dict = ppmi_scores(corpus, window_size=50)
+    #save dict to txt file
+    with open(f'pmi_scores_{decade}.txt', 'w') as file:
+        for key, value in pmi_dict.items():
+            file.write(f'{key[0]} {key[1]} {value}\n')
+
+
+
     for main_term, related_terms in terms.items():
         for related_term in related_terms:
             try:
-                cosine_distance = model.wv.similarity(main_term, related_term)
-                print(decade, main_term, related_term, cosine_distance)
+                if main_term not in model.wv.key_to_index:
+                    continue
+                else:
+                    cosine_distance = model.wv.similarity(main_term, related_term)
+                    pmi_score = pmi_dict.get((main_term, related_term))
+                    print(decade, (main_term, related_term), pmi_score)
+                #print(decade, main_term, related_term, cosine_distance, pmi_score)
+
             except KeyError:
                 cosine_distance = None  
-            distances_df = pd.concat([distances_df, pd.DataFrame({'main term': [main_term], 'decade': [decade], 'related term': [related_term], 'distance': [cosine_distance]})])
+            distances_df = pd.concat([distances_df, pd.DataFrame({'main term': [main_term], 'decade': [decade], 'related term': [related_term], 'distance': [cosine_distance], 'pmi': [pmi_score]})])
 distances_df.to_csv('distances.csv', index=False)
 
+
+st.write('## Approach 1: Shift in cosine similarity between topic and related term')
+with st.expander("How does the method work?"):
+        st.write('''The idea is to project the words into a high-dimensional space where the words that share common contexts in the corpus are located close to each other. Using a distance metric such as cosine distance, we can measure the similarity between two words. These two words being the topic and the related term.
+                    The implementation is the following:
+- The dataset is divided into time slices (decades). All papers from a time slice are concatenated into one string.
+- Stop words are removed, bigrams and trigrams are included. These options are configurable. As a result, a list of sentences is obtained.
+- Train a “skip-gram with negative sampling (SGNS)” model for each time slice. (TODO: Align the coordinates of the resulting latent spaces)
+- In each time slice, calculate the cosine similarity between the topic and the related term.                 
+                                  ''')
+        st.info('''Note: The model SGNS (word2vec) is very sentitive to training settings with little data. To overcome our data limitations, we explicity opted for a lower min_count (count of a word in corpus to be considered by the model) and a longer window_length (the context length to be considered). These settings can be changed in the sidebar. We recommend to increase the min_count once more data is available.
+                Another note: the quality of the results is subjective. There is no ground truth to compare the results with. Modifying the training settings will lead to different results.
+                Number of epochs for training: 25.
+                ''')
+        st.info('''
+                Another note: the quality of the results is subjective. There is no ground truth to compare the results with. Modifying the training settings will lead to different results.
+                Number of epochs for training: 25.
+                ''')
+with st.expander("How to interpret the graphs?"):
+        st.write('''
+For each topic in the "Terms of interest" tab, a graph is generated showing the cosine similarity between the topic and the related term across different decades. 
+A higher cosine similarity indicates that the two words (in our scenario: topic and related term) are more similar in meaning (i.e., they share more contexts in the corpus). This doesn't mean that the topic and the related term co-occur more frequently, but rather that they are used in similar contexts! 
+The graphs can be interpreted as follows:
+- If the cosine similarity is close to 1, the topic and its related term are used in similar contexts and are likely to be related.
+- If the cosine similarity is close to 0, the  topic and its related term are used in different contexts and are likely to be unrelated. 
+                                  ''')
+        st.info('Note: the comparison is between the main topic and EACH related term across different time periods. The main topic is in the title of the graph')
 with st.spinner('Creating the graphs...'):
     distances_df = load_distances('distances.csv')
     main_terms = distances_df['main term'].unique()
 
     for main_term in main_terms:
         main_data = distances_df[distances_df['main term'] == main_term]
-        st.text(f" Shift in similarity with respect to: {main_term}")
-        point = alt.Chart(main_data).mark_point(size=50, filled=True).encode(
-            x='decade:N',
-            y='distance',
-            color='related term',
-            tooltip=['related term', 'distance']
-        ).interactive()
+        ##st.write(f"### Shifts with respect to: {main_term}")
 
-        chart = alt.Chart(main_data).mark_line(
-            #point=alt.OverlayMarkDef(filled=False, fill="white")
+        chart = alt.Chart(main_data, title=main_term).mark_line(
+            point=alt.OverlayMarkDef(filled=False, fill="white")
         ).encode(
             x=alt.X('decade:N', title='', axis=alt.Axis(labelAngle=0)),
             y=alt.Y('distance', title='Cosine similarity'),
-            color=alt.Color('related term', legend=None),
+            color='related term',
             tooltip=['related term', 'distance']  
         )
+        st.altair_chart(chart, theme='streamlit', use_container_width=True)
+        
+st.write('### Approach 2: Shift in co-occurence frequency between topic and related term')
+distances_df = load_distances('distances.csv')
+main_terms = distances_df['main term'].unique()
+with st.expander("How does the PPMI (positive point-wise mutual information) work?"):
+        st.write(''' 
+        The method used is the positive point-wise mutual information (PPMI). It is a measure of association between two words. It is calculated as follows:
+        ''')
+        st.image('img/pmi_formula.png')
+        st.write(''' 
+        where 
+        - P(topic term,related term) is the probability of the co-occurrence of 'topic term' and 'related term', and 
+        - P(topic term) and P(related term) are the probabilities of 'topic term' and 'related term', respectively.
+        
+        In our context, the PPMI is calculated for each pair of <topic, related term> in each time slice (decade)
+        ''')
+        st.image('img/ppmi_formula.png')
+        st.write(''' 
+        - The graphs show how the PPMI score changes over time for the pair <topic, related term>. 
+        - A higher PPMI score indicates that the 'topic' and 'related term' are more likely to co-occur in the same context.
+        - The chosen context length is the same as for the cosine similarity calculation. You can change this in the sidebar.    
+        
+        This method is explainable and interpretable. It is based on the co-occurrence of words in the corpus. 
+        The data needs to be large enough in order to have 'topic' and 'related term' in the same context window x times to be considered as a reliable measure. 
+        ''')
+        st.info('If the PPMI score is not present in the graph, it means that the pair <topic, related term> did not co-occur in the same context in the given time slice, which is bad news :(')
 
 
 
-        st.altair_chart((point + chart).resolve_scale(color='independent'), theme='streamlit', use_container_width=True)
+for main_term in main_terms:
+    main_data = distances_df[distances_df['main term'] == main_term]
+
+
+    ppmi = alt.Chart(main_data, title = main_term).mark_line(
+        point=alt.OverlayMarkDef(filled=False, fill="white")
+    ).encode(
+        x=alt.X('decade:N', title='', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y('pmi', title='PMI score'),
+        color='related term',
+        tooltip=['related term', 'pmi']  
+    )
+
+    st.altair_chart(ppmi, theme='streamlit', use_container_width=True)
 
 

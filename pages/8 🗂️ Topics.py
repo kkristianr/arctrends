@@ -18,6 +18,9 @@ from gensim.models import Phrases
 from gensim.models.phrases import Phraser
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk import BigramCollocationFinder
+from nltk.collocations import BigramAssocMeasures
+
 
 st.set_page_config(page_title="Design shifts in healthcare", page_icon="favicon.ico", layout="wide", initial_sidebar_state="collapsed", menu_items=None)
 
@@ -75,14 +78,11 @@ def preprocess_papers (content):
     return new_lines
 
 
+
 articles_by_decade = papers.groupby('Decade')['Content'].apply(lambda x: ' '.join(x)).reset_index()
 articles_by_decade['Content'] = articles_by_decade['Content'].astype("string")
 
 articles_by_decade['Content'] = articles_by_decade['Content'].apply(preprocess_papers)
-
-
-
-
 ### USERFACE
  
 st.title("Topic modeling")
@@ -91,7 +91,6 @@ col1, col2, col3, col4 = st.columns((1,1,1,1))
 with col1:
     k_topics = st.slider("Number of topics", 2, 10, value=5)
 
-
 with st.spinner('Extracting the topics...'):
     dictionary = corpora.Dictionary(articles_by_decade['Content'])
     st.write("Dictionary size: " + str(len(dictionary)))
@@ -99,8 +98,11 @@ with st.spinner('Extracting the topics...'):
     lda_model = gensim.models.ldamodel.LdaModel(corpus, num_topics=k_topics, id2word=dictionary, eval_every=1, passes=30, random_state=42, alpha='auto', per_word_topics=False)
     lda_model.save('models/lda.model')
 
+
+
 with st.spinner('Visualizing the topics...'):
     lda_display = gensim.models.ldamodel.LdaModel.load('models/lda.model')
     lda_data =  pyLDAvis.gensim.prepare(lda_display, corpus, dictionary)
     html_string = pyLDAvis.prepared_data_to_html(lda_data)
     components.html(html_string, width=1300, height=1200, scrolling=True)
+

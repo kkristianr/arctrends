@@ -237,9 +237,9 @@ if query:
                             'Distance',
                             as_=['Distance', 'Density'],
                             groupby=['Decade']
-                        ).mark_area(
+                        ).mark_area(clip=True
                         ).encode(
-                            alt.X('Distance:Q', title='Distance'),
+                            alt.X('Distance:Q', title='Distance', scale=alt.Scale(domain=(0, 500))),
                             alt.Y('Density:Q', title='Density'),
                             alt.Row('Decade:N')
                         ).properties(height=100)
