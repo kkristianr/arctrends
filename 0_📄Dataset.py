@@ -43,7 +43,7 @@ articles_by_decade = papers.groupby('Decade')['Content'].apply(lambda x: ' '.joi
 
 ### USERFACE
 
-dataset_tab, pdf_reader, about_tab  = st.tabs(["Dataset", "Paper reader", "About"])
+dataset_tab, pdf_reader  = st.tabs(["Dataset", "Paper reader"])
 
 with dataset_tab:
     st.write("## About the dataset")
@@ -123,8 +123,3 @@ with pdf_reader:
         st.write("New papers added")
         count = len(papers)
         st.write(f"Total number of papers included: {count}")
-
-with about_tab: 
-    st.write("## About the method")
-    st.write("It is a custom implementation based on computing word2vec embeddings for some specific words of interest such as SUSTAINABILITY or PATIENT PRIVACY. By looking at the neighborhood of these words in the vector space and comparing the distance across different decades, we try to identify shifts in the healthcare architectural design by visualizing the changes in the distance between neighbours and the words of interest.")
-    st.write("## About the project")
