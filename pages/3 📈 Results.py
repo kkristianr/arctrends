@@ -219,12 +219,10 @@ with st.expander("How does the method work?"):
 - In each time slice, calculate the cosine similarity between the topic and the related term.                 
                                   ''')
         st.info('''Note: The model SGNS (word2vec) is very sentitive to training settings with little data. To overcome our data limitations, we explicity opted for a lower min_count (count of a word in corpus to be considered by the model) and a longer window_length (the context length to be considered). These settings can be changed in the sidebar. We recommend to increase the min_count once more data is available.
-                Another note: the quality of the results is subjective. There is no ground truth to compare the results with. Modifying the training settings will lead to different results.
-                Number of epochs for training: 25.
                 ''')
         st.info('''
                 Another note: the quality of the results is subjective. There is no ground truth to compare the results with. Modifying the training settings will lead to different results.
-                Number of epochs for training: 25.
+                Number of epochs used for training: 25.
                 ''')
 with st.expander("How to interpret the graphs?"):
         st.write('''
@@ -234,7 +232,7 @@ The graphs can be interpreted as follows:
 - If the cosine similarity is close to 1, the topic and its related term are used in similar contexts and are likely to be related.
 - If the cosine similarity is close to 0, the  topic and its related term are used in different contexts and are likely to be unrelated. 
                                   ''')
-        st.info('Note: the comparison is between the main topic and EACH related term across different time periods. The main topic is in the title of the graph')
+        st.info('Note: the comparison is between the topic and EACH related term across different time periods, and NOT between different related terms. The topic is in the title of the graph')
 with st.spinner('Creating the graphs...'):
     distances_df = load_distances('distances.csv')
     main_terms = distances_df['main term'].unique()
