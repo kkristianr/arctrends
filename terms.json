@@ -7,13 +7,12 @@
         "future",
         "daylight",
         "innovation"
-    ], 
+    ],
     "design": [
         "data_analysis",
         "evidence",
         "evidence_driven",
         "data_collection",
-        "privacy",
         "needs"
     ],
     "patient": [
@@ -24,14 +23,18 @@
         "hallway",
         "privacy"
     ],
+    "staff": [
+        "efficient",
+        "well-being"
+    ],
     "patient_privacy": [
         "home-like",
-        "private_bathrooms",
         "position",
-        "room",
+        "rooms",
         "hallway",
         "space_walking",
-        "supervision"
+        "supervision",
+        "private_bathroom"
     ],
     "technology": [
         "integration",
