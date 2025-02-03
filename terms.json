@@ -41,5 +41,6 @@
         "resources",
         "decision_support",
         "desired"
-    ]
+    ],
+    "window": []
 }
