@@ -265,19 +265,28 @@ distances_df.to_csv('distances.csv', index=False)
 # Display information and graphs
 st.write('## Approach 1: Shift in cosine similarity between topic and related term')
 with st.expander("How does the method work?"):
-    st.write('''The idea is to project words into a high-dimensional space where words that share common contexts are nearby. 
-By aligning the latent spaces across time slices (using the CADE compass), we can compare cosine similarities of a topic 
-and its related term over decades.''')
-    st.info('''Note: The SGNS (word2vec) model is very sensitive to training settings with little data. We use a low min_count and a longer window.
-            ''')
-    st.info('''Another note: quality of results is subjective. Changing training settings will lead to different results.
-            ''')
+        st.write('''The idea is to project the words into a high-dimensional space where the words that share common contexts in the corpus are located close to each other. Using a distance metric such as cosine distance, we can measure the similarity between two words. These two words being the topic and the related term.
+                    The implementation is the following:
+- The dataset is divided into time slices (decades). All papers from a time slice are concatenated into one string.
+- Stop words are removed, bigrams and trigrams are included. These options are configurable. As a result, a list of sentences is obtained.
+- Train a “skip-gram with negative sampling (SGNS)” model for each time slice. Align the coordinates of the obtained models to ensure comparability. 
+- In each time slice, calculate the cosine similarity between the topic and the related term.                 
+                                  ''')
+        st.info('''Note: The model SGNS (word2vec) is very sentitive to training settings with little data. To overcome our data limitations, we explicity opted for a lower min_count (count of a word in corpus to be considered by the model) and a longer window_length (the context length to be considered). These settings can be changed in the sidebar. We recommend to increase the min_count once more data is available.
+                ''')
+        st.info('''
+                Another note: the quality of the results is subjective. There is no ground truth to compare the results with. Modifying the training settings will lead to different results.
+                Number of epochs used for training: 25.
+                ''')
 with st.expander("How to interpret the graphs?"):
-    st.write('''
-For each topic (in the "Terms of interest" tab), a graph shows the cosine similarity between the topic and a related term 
-across decades. Higher similarity indicates that the words are used in similar contexts.
-    ''')
-    st.info('Note: The graphs compare the topic against EACH related term over time, not the related terms among themselves.')
+        st.write('''
+For each topic in the "Terms of interest" tab, a graph is generated showing the cosine similarity between the topic and the related term across different decades. 
+A higher cosine similarity indicates that the two words (in our scenario: topic and related term) are more similar in meaning (i.e., they share more contexts in the corpus). This doesn't mean that the topic and the related term co-occur more frequently, but rather that they are used in similar contexts! 
+The graphs can be interpreted as follows:
+- If the cosine similarity is close to 1, the topic and its related term are used in similar contexts and are likely to be related.
+- If the cosine similarity is close to 0, the  topic and its related term are used in different contexts and are likely to be unrelated. 
+                                  ''')
+        st.info('Note: the comparison is between the topic and EACH related term across different time periods, and NOT between different related terms. The topic is in the title of the graph')
 with st.spinner('Creating the graphs...'):
     distances_df = load_distances('distances.csv')
     main_terms = distances_df['main term'].unique()

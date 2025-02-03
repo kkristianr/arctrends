@@ -43,7 +43,7 @@ term = st.text_input("Enter term:")
 term = format_term(term)
 if term is not None:
     try:
-        model = load_model('models/word2vec.model')
+        model = load_model('model/cade_2016-2025.model')
     except FileNotFoundError:
         st.error("Model not found. Please train the model first.")
         st.stop()
